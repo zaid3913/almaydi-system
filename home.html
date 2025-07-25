@@ -1250,6 +1250,63 @@ function deleteUser(id) {
   deleteFromFirestore('users', id);
 }
 
+function renderUsers() {
+  const tbody = document.getElementById('userTableBody');
+  tbody.innerHTML = '';
+  users.forEach((u, i) => {
+    tbody.innerHTML += `<tr>
+      <td>${i + 1}</td>
+      <td>${u.name}</td>
+      <td>${u.email}</td>
+      <td>${u.role}</td>
+      <td class="action-btns">
+        <button onclick="editUser(${u.id})"><i class="bi bi-pencil-square"></i></button>
+        <button onclick="deleteUser(${u.id})"><i class="bi bi-trash"></i></button>
+      </td>
+    </tr>`;
+  });
+}
+
+function renderExpenses() {
+  const tbody = document.getElementById('expenseTableBody');
+  tbody.innerHTML = '';
+  expenses.forEach((e, i) => {
+    tbody.innerHTML += `<tr>
+      <td>${i + 1}</td>
+      <td>${e.name}</td>
+      <td>${e.amount.toLocaleString()} د.ع</td>
+      <td>${e.date}</td>
+      <td>${e.type}</td>
+      <td>${e.notes}</td>
+      <td class="action-btns">
+        <button onclick="editExpense(${e.id})"><i class="bi bi-pencil-square"></i></button>
+        <button onclick="deleteExpense(${e.id})"><i class="bi bi-trash"></i></button>
+      </td>
+    </tr>`;
+  });
+}
+
+function renderDebts() {
+  const tbody = document.getElementById('debtTableBody');
+  tbody.innerHTML = '';
+  debts.forEach((d, i) => {
+    tbody.innerHTML += `<tr>
+      <td>${i + 1}</td>
+      <td>${d.name}</td>
+      <td>${d.phone}</td>
+      <td>${d.amount.toLocaleString()} د.ع</td>
+      <td>${d.dueDate}</td>
+      <td>${d.notes}</td>
+      <td>${d.paid ? 'مدفوع' : 'غير مدفوع'}</td>
+      <td class="action-btns">
+        <button onclick="editDebt(${d.id})"><i class="bi bi-pencil-square"></i></button>
+        <button onclick="deleteDebt(${d.id})"><i class="bi bi-trash"></i></button>
+      </td>
+    </tr>`;
+  });
+}
+
+
 // ================== تهيئة النظام ==================
 document.addEventListener('DOMContentLoaded', function() {
   // تحميل جميع البيانات عند بدء التشغيل
