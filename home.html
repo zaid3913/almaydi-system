@@ -421,7 +421,14 @@ body.dark-mode th {
   </div>
 
 <label>باركود المنتج</label>
-<input type="text" id="prodBarcode" placeholder="مسح أو إدخال يدوي">
+<input type="text" id="prodBarcodeScan" placeholder="مسح أو إدخال يدوي">
+
+<script>
+  document.getElementById("prodBarcodeScan").addEventListener("input", function() {
+    document.getElementById("prodBarcode").value = this.value;
+  });
+</script>
+
 <button type="button" class="btn-outline-success" onclick="startBarcodeScanner('product')">
   <i class="bi bi-upc-scan"></i> مسح باركود
 </button>
