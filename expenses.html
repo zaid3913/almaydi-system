@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <title>العميدي للألكترونيات - المصاريف</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+<link rel="stylesheet" href="sidebar.css">
+<script src="sidebar.js"></script>
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Cairo', sans-serif;
+      background: #f8f9fa;
+    }
+    .main {
+      margin-right: 20px;
+      padding: 20px;
+    }
+    .card {
+      background: #fff;
+      border-radius: 8px;
+      padding: 20px;
+      box-shadow: 0 2px 8px rgba(0,0,0,.05);
+      margin-bottom: 20px;
+    }
+    .btn-primary {
+      background: #1abc9c;
+      border: none;
+      padding: 8px 18px;
+      border-radius: 4px;
+      color: #fff;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .btn-outline-success {
+      background: transparent;
+      color: #198754;
+      border: 1px solid #198754;
+      padding: 8px 16px;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    th, td {
+      padding: 12px 10px;
+      text-align: center;
+      border: 1px solid #ddd;
+    }
+    thead {
+      background: #f1f1f1;
+    }
+    .action-btns button {
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 18px;
+      margin: 0 5px;
+    }
+    .search-box {
+      margin-bottom: 15px;
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+    input, select, textarea {
+      width: 100%;
+      padding: 8px;
+      margin: 4px 0 12px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      box-sizing: border-box;
+    }
+    .hidden {
+      display: none;
+    }
+    .expense-type {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 10px;
+      flex-wrap: wrap;
+    }
+    .expense-type label {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .chart-controls {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 15px;
+      flex-wrap: wrap;
+    }
+    .chart-controls button {
+      padding: 5px 10px;
+      font-size: 14px;
+    }
+    .chart-container {
+      margin-top: 20px;
+      height: 300px;
+    }
+  </style>
+</head>
+<body>
+    <div class="sidebar">
+  <div class="sidebar-header">
+    <h2>العميدي للألكترونيات</h2>
+  </div>
+  
+  <ul class="sidebar-menu">
+    <li><a href="home.html"><i class="bi bi-house"></i> <span>الرئيسية</span></a></li>
+    <li><a href="products.html"><i class="bi bi-box-seam"></i> <span>المنتجات</span></a></li>
+    <li><a href="sales.html"><i class="bi bi-receipt"></i> <span>المبيعات</span></a></li>
+    <li><a href="debts.html"><i class="bi bi-credit-card"></i> <span>الديون</span></a></li>
+    <li><a href="reports.html"><i class="bi bi-graph-up"></i> <span>التقارير</span></a></li>
+    <li><a href="realprice.html"><i class="bi bi-tag"></i> <span>الأسعار الحقيقية</span></a></li>
+    <li><a href="expenses.html"><i class="bi bi-cash-stack"></i> <span>المصاريف</span></a></li>
+    <li><a href="settings.html"><i class="bi bi-gear"></i> <span>الإعدادات</span></a></li>
+    <div class="sidebar-footer">
+    <button class="logout-btn" onclick="logout()">
+      <i class="bi bi-box-arrow-left"></i> <span>تسجيل الخروج</span>
+    </button>
+  </div>
+  </ul>
+  
+</div>
+
+  <div class="main-content">
+    <h1>إدارة المصاريف</h1>
+    
+    <div class="card">
+      <button class="btn-primary" onclick="toggleForm('expenseForm')">
+        <i class="bi bi-plus-circle"></i> إضافة مصروف جديد
+      </button>
+    </div>
+    
+    <div id="expenseForm" class="card hidden">
+      <h3>تسجيل مصروف جديد</h3>
+      <form onsubmit="saveExpense(event)">
+        <input type="hidden" id="expenseId">
+        <label>اسم المصروف</label>
+        <input type="text" id="expenseName" required>
+        
+        <label>المبلغ (دينار عراقي)</label>
+        <input type="number" id="expenseAmount" min="0" required>
+        
+        <label>التاريخ</label>
+        <input type="date" id="expenseDate" required>
+        
+        <label>نوع المصروف</label>
+        <div class="expense-type">
+          <label><input type="radio" name="expenseType" value="تشغيلية" checked> تشغيلية</label>
+          <label><input type="radio" name="expenseType" value="صيانة"> صيانة</label>
+          <label><input type="radio" name="expenseType" value="رواتب"> رواتب</label>
+          <label><input type="radio" name="expenseType" value="أخرى"> أخرى</label>
+        </div>
+        
+        <label>ملاحظات</label>
+        <textarea id="expenseNotes"></textarea>
+        
+        <button type="submit" class="btn-primary">حفظ</button>
+        <button type="button" class="btn-outline-success" onclick="toggleForm('expenseForm')">إلغاء</button>
+      </form>
+    </div>
+    
+    <div class="card">
+      <h3>سجل المصاريف</h3>
+      <div class="search-box">
+        <input type="text" id="expenseSearch" placeholder="ابحث باسم المصروف..." oninput="filterExpenses()">
+        <button class="btn-outline-success" onclick="exportExpensesCSV()">تصدير Excel</button>
+      </div>
+      
+      <div class="chart-controls">
+        <button onclick="filterExpensesByType('all')">الكل</button>
+        <button onclick="filterExpensesByType('تشغيلية')">تشغيلية</button>
+        <button onclick="filterExpensesByType('صيانة')">صيانة</button>
+        <button onclick="filterExpensesByType('رواتب')">رواتب</button>
+        <button onclick="filterExpensesByType('أخرى')">أخرى</button>
+      </div>
+      
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>اسم المصروف</th>
+            <th>المبلغ</th>
+            <th>التاريخ</th>
+            <th>النوع</th>
+            <th>ملاحظات</th>
+            <th>إجراءات</th>
+          </tr>
+        </thead>
+        <tbody id="expenseTableBody"></tbody>
+      </table>
+    </div>
+    
+    <div class="card">
+      <h3>مخطط المصاريف حسب النوع</h3>
+      <div class="chart-container">
+        <canvas id="expensesChart"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // تهيئة Firebase
+    const firebaseConfig = {
+      apiKey: "AIzaSyB3T4pzPOvAw8mkfq_HXnpjPTR9orkj0ms",
+      authDomain: "almaydi-system.firebaseapp.com",
+      projectId: "almaydi-system",
+      storageBucket: "almaydi-system.appspot.com",
+      messagingSenderId: "783507593229",
+      appId: "1:783507593229:web:39087cbaa33268c62d5d44"
+    };
+    
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+    
+    // تأمين الصفحة
+    if(localStorage.getItem('isLoggedIn') !== 'true') {
+      window.location.href = 'index.html';
+    }
+    
+    // متغيرات عامة
+    let expenses = [];
+    let expensesChart = null;
+    let currentFilterType = 'all';
+    
+    // تحميل المصاريف عند بدء التشغيل
+    document.addEventListener('DOMContentLoaded', function() {
+      loadExpenses();
+    });
+    
+    // تحميل المصاريف من Firebase
+    function loadExpenses() {
+      db.collection('expenses').orderBy('date', 'desc').onSnapshot((snapshot) => {
+        expenses = [];
+        snapshot.forEach((doc) => {
+          expenses.push(doc.data());
+        });
+        renderExpenses();
+        renderExpensesChart();
+      });
+    }
+    
+    // عرض المصاريف في الجدول
+    function renderExpenses() {
+      const tbody = document.getElementById('expenseTableBody');
+      tbody.innerHTML = '';
+      
+      const filteredExpenses = currentFilterType === 'all' 
+        ? expenses 
+        : expenses.filter(exp => exp.type === currentFilterType);
+      
+      filteredExpenses.forEach((expense, index) => {
+        tbody.innerHTML += `
+          <tr>
+            <td>${index + 1}</td>
+            <td>${expense.name}</td>
+            <td>${expense.amount.toLocaleString()} د.ع</td>
+            <td>${expense.date}</td>
+            <td>${expense.type}</td>
+            <td>${expense.notes || '-'}</td>
+            <td class="action-btns">
+              <button onclick="editExpense('${expense.id}')"><i class="bi bi-pencil-square"></i></button>
+              <button onclick="deleteExpense('${expense.id}')"><i class="bi bi-trash"></i></button>
+            </td>
+          </tr>
+        `;
+      });
+    }
+    
+    // حفظ المصروف
+    function saveExpense(e) {
+      e.preventDefault();
+      
+      const id = document.getElementById('expenseId').value || Date.now().toString();
+      const expense = {
+        id: id,
+        name: document.getElementById('expenseName').value.trim(),
+        amount: parseFloat(document.getElementById('expenseAmount').value),
+        date: document.getElementById('expenseDate').value,
+        type: document.querySelector('input[name="expenseType"]:checked').value,
+        notes: document.getElementById('expenseNotes').value.trim(),
+        createdAt: new Date().toISOString()
+      };
+      
+      db.collection('expenses').doc(id).set(expense)
+        .then(() => {
+          alert('تم حفظ المصروف بنجاح');
+          toggleForm('expenseForm');
+          document.getElementById('expenseForm').reset();
+        })
+        .catch(error => {
+          console.error('Error saving expense: ', error);
+          alert('حدث خطأ أثناء حفظ المصروف');
+        });
+    }
+    
+    // تعديل المصروف
+    function editExpense(id) {
+      const expense = expenses.find(exp => exp.id === id);
+      if (!expense) return;
+      
+      document.getElementById('expenseId').value = expense.id;
+      document.getElementById('expenseName').value = expense.name;
+      document.getElementById('expenseAmount').value = expense.amount;
+      document.getElementById('expenseDate').value = expense.date;
+      
+      const typeRadios = document.getElementsByName('expenseType');
+      for (let radio of typeRadios) {
+        if (radio.value === expense.type) {
+          radio.checked = true;
+          break;
+        }
+      }
+      
+      document.getElementById('expenseNotes').value = expense.notes || '';
+      
+      toggleForm('expenseForm');
+    }
+    
+    // حذف المصروف
+    function deleteExpense(id) {
+      if (!confirm('هل أنت متأكد من حذف هذا المصروف؟')) return;
+      
+      db.collection('expenses').doc(id).delete()
+        .then(() => {
+          alert('تم حذف المصروف بنجاح');
+        })
+        .catch(error => {
+          console.error('Error deleting expense: ', error);
+          alert('حدث خطأ أثناء حذف المصروف');
+        });
+    }
+    
+    // تصدير إلى Excel
+    function exportExpensesCSV() {
+      let csv = '\uFEFF#,اسم المصروف,المبلغ,التاريخ,النوع,ملاحظات\n';
+      
+      expenses.forEach((exp, i) => {
+        csv += `${i + 1},${exp.name},${exp.amount},${exp.date},${exp.type},"${exp.notes || ''}"\n`;
+      });
+      
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      
+      link.setAttribute('href', url);
+      link.setAttribute('download', 'المصاريف.csv');
+      link.style.visibility = 'hidden';
+      
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+    
+    // تصفية المصاريف
+    function filterExpenses() {
+      const searchTerm = document.getElementById('expenseSearch').value.toLowerCase();
+      const rows = document.getElementById('expenseTableBody').querySelectorAll('tr');
+      
+      rows.forEach(row => {
+        const name = row.cells[1].textContent.toLowerCase();
+        
+        if (name.includes(searchTerm)) {
+          row.style.display = '';
+        } else {
+          row.style.display = 'none';
+        }
+      });
+    }
+    
+    // تصفية حسب النوع
+    function filterExpensesByType(type) {
+      currentFilterType = type;
+      renderExpenses();
+    }
+    
+    // تبديل عرض النموذج
+    function toggleForm(formId) {
+      const form = document.getElementById(formId);
+      form.classList.toggle('hidden');
+      
+      if (!form.classList.contains('hidden')) {
+        // تعيين التاريخ الحالي كقيمة افتراضية
+        const today = new Date().toISOString().split('T')[0];
+        document.getElementById('expenseDate').value = today;
+        form.querySelector('input').focus();
+      }
+    }
+    
+    // رسم مخطط المصاريف
+    function renderExpensesChart() {
+      const ctx = document.getElementById('expensesChart').getContext('2d');
+      
+      // تجميع المصاريف حسب النوع
+      const expensesByType = {
+        'تشغيلية': 0,
+        'صيانة': 0,
+        'رواتب': 0,
+        'أخرى': 0
+      };
+      
+      expenses.forEach(exp => {
+        expensesByType[exp.type] += exp.amount;
+      });
+      
+      const labels = Object.keys(expensesByType);
+      const data = Object.values(expensesByType);
+      
+      // حذف المخطط القديم إذا موجود
+      if (expensesChart) {
+        expensesChart.destroy();
+      }
+      
+      expensesChart = new Chart(ctx, {
+        type: 'pie',
+        data: {
+          labels: labels,
+          datasets: [{
+            data: data,
+            backgroundColor: [
+              'rgba(54, 162, 235, 0.7)',
+              'rgba(255, 99, 132, 0.7)',
+              'rgba(255, 206, 86, 0.7)',
+              'rgba(75, 192, 192, 0.7)'
+            ],
+            borderWidth: 1
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: {
+              position: 'top',
+            },
+            title: {
+              display: true,
+              text: 'توزيع المصاريف حسب النوع'
+            }
+          }
+        }
+      });
+    }
+  </script>
+</body>
+</html>

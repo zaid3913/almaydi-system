@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <title>العميدي للألكترونيات - التقارير</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+<link rel="stylesheet" href="sidebar.css">
+<script src="sidebar.js"></script>
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Cairo', sans-serif;
+      background: #f8f9fa;
+    }
+    .main {
+      margin-right: 20px;
+      padding: 20px;
+    }
+    .card {
+      background: #fff;
+      border-radius: 8px;
+      padding: 20px;
+      box-shadow: 0 2px 8px rgba(0,0,0,.05);
+      margin-bottom: 20px;
+    }
+    .btn-primary {
+      background: #1abc9c;
+      border: none;
+      padding: 8px 18px;
+      border-radius: 4px;
+      color: #fff;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .btn-outline-success {
+      background: transparent;
+      color: #198754;
+      border: 1px solid #198754;
+      padding: 8px 16px;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    th, td {
+      padding: 12px 10px;
+      text-align: center;
+      border: 1px solid #ddd;
+    }
+    thead {
+      background: #f1f1f1;
+    }
+    .search-box {
+      margin-bottom: 15px;
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+    input, select {
+      width: 100%;
+      padding: 8px;
+      margin: 4px 0 12px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      box-sizing: border-box;
+    }
+    .chart-controls {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 15px;
+      flex-wrap: wrap;
+    }
+    .chart-controls button {
+      padding: 5px 10px;
+      font-size: 14px;
+    }
+    .chart-container {
+      margin-top: 20px;
+      height: 300px;
+    }
+    .financial-summary {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 15px;
+      margin-top: 20px;
+    }
+    .financial-card {
+      background: #fff;
+      border-radius: 8px;
+      padding: 15px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      text-align: center;
+    }
+    .financial-card h4 {
+      margin: 0 0 10px 0;
+      color: #3c556e;
+    }
+    .financial-card p {
+      font-size: 20px;
+      font-weight: bold;
+      margin: 0;
+      color: #1abc9c;
+    }
+    .negative-profit {
+      color: #e74c3c !important;
+    }
+  </style>
+</head>
+<body>
+    <div class="sidebar">
+  <div class="sidebar-header">
+    <h2>العميدي للألكترونيات</h2>
+  </div>
+  
+  <ul class="sidebar-menu">
+    <li><a href="home.html"><i class="bi bi-house"></i> <span>الرئيسية</span></a></li>
+    <li><a href="products.html"><i class="bi bi-box-seam"></i> <span>المنتجات</span></a></li>
+    <li><a href="sales.html"><i class="bi bi-receipt"></i> <span>المبيعات</span></a></li>
+    <li><a href="debts.html"><i class="bi bi-credit-card"></i> <span>الديون</span></a></li>
+    <li><a href="reports.html"><i class="bi bi-graph-up"></i> <span>التقارير</span></a></li>
+    <li><a href="realprice.html"><i class="bi bi-tag"></i> <span>الأسعار الحقيقية</span></a></li>
+    <li><a href="expenses.html"><i class="bi bi-cash-stack"></i> <span>المصاريف</span></a></li>
+    <li><a href="settings.html"><i class="bi bi-gear"></i> <span>الإعدادات</span></a></li>
+    <div class="sidebar-footer">
+    <button class="logout-btn" onclick="logout()">
+      <i class="bi bi-box-arrow-left"></i> <span>تسجيل الخروج</span>
+    </button>
+  </div>
+  </ul>
+  
+</div>
+
+  <div class="main-content">
+    <h1>التقارير المالية</h1>
+    
+    <div class="card">
+      <h3>تصفية التقارير</h3>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+        <div>
+          <label>من تاريخ</label>
+          <input type="date" id="fromDate">
+        </div>
+        <div>
+          <label>إلى تاريخ</label>
+          <input type="date" id="toDate">
+        </div>
+      </div>
+      
+      <div class="chart-controls">
+        <button onclick="filterReports('today')">اليوم</button>
+        <button onclick="filterReports('week')">أسبوع</button>
+        <button onclick="filterReports('month')">شهر</button>
+        <button onclick="filterReports('year')">سنة</button>
+        <button onclick="filterReports('all')">الكل</button>
+      </div>
+      
+      <button class="btn-primary" onclick="applyFilters()">تطبيق الفلتر</button>
+      <button class="btn-outline-success" onclick="exportReportCSV()">تصدير Excel</button>
+    </div>
+    
+    <div class="card">
+      <h3>ملخص مالي</h3>
+      <div class="financial-summary">
+        <div class="financial-card">
+          <h4>إجمالي المبيعات</h4>
+          <p id="totalSales">0 د.ع</p>
+        </div>
+        <div class="financial-card">
+          <h4>إجمالي المصاريف</h4>
+          <p id="totalExpenses">0 د.ع</p>
+        </div>
+        <div class="financial-card">
+          <h4>الربح الإجمالي</h4>
+          <p id="grossProfit">0 د.ع</p>
+        </div>
+        <div class="financial-card">
+          <h4>الربح الصافي</h4>
+          <p id="netProfit">0 د.ع</p>
+        </div>
+      </div>
+    </div>
+    
+    <div class="card">
+      <h3>مخطط المبيعات</h3>
+      <div class="chart-container">
+        <canvas id="salesChart"></canvas>
+      </div>
+    </div>
+    
+    <div class="card">
+      <h3>سجل المبيعات</h3>
+      <div class="search-box">
+        <input type="text" id="reportSearch" placeholder="ابحث برقم الفاتورة..." oninput="filterReportTable()">
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>رقم الفاتورة</th>
+            <th>التاريخ</th>
+            <th>المنتجات</th>
+            <th>الكمية</th>
+            <th>الإجمالي</th>
+            <th>المدفوع</th>
+            <th>الباقي</th>
+          </tr>
+        </thead>
+        <tbody id="reportTableBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <script>
+    // تهيئة Firebase
+    const firebaseConfig = {
+      apiKey: "AIzaSyB3T4pzPOvAw8mkfq_HXnpjPTR9orkj0ms",
+      authDomain: "almaydi-system.firebaseapp.com",
+      projectId: "almaydi-system",
+      storageBucket: "almaydi-system.appspot.com",
+      messagingSenderId: "783507593229",
+      appId: "1:783507593229:web:39087cbaa33268c62d5d44"
+    };
+    
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+    
+    // تأمين الصفحة
+    if(localStorage.getItem('isLoggedIn') !== 'true') {
+      window.location.href = 'index.html';
+    }
+    
+    // متغيرات عامة
+    let invoices = [];
+    let expenses = [];
+    let salesChart = null;
+    
+    // تحميل البيانات عند بدء التشغيل
+    document.addEventListener('DOMContentLoaded', function() {
+      loadInvoices();
+      loadExpenses();
+    });
+    
+    // تحميل الفواتير من Firebase
+    function loadInvoices() {
+      db.collection('invoices').orderBy('createdAt', 'desc').onSnapshot((snapshot) => {
+        invoices = [];
+        snapshot.forEach((doc) => {
+          invoices.push(doc.data());
+        });
+        renderReportTable();
+        calculateFinancialReport();
+        renderSalesChart();
+      });
+    }
+    
+    // تحميل المصاريف من Firebase
+    function loadExpenses() {
+      db.collection('expenses').onSnapshot((snapshot) => {
+        expenses = [];
+        snapshot.forEach((doc) => {
+          expenses.push(doc.data());
+        });
+        calculateFinancialReport();
+      });
+    }
+    
+    // تطبيق الفلاتر
+    function applyFilters() {
+      const fromDate = document.getElementById('fromDate').value;
+      const toDate = document.getElementById('toDate').value;
+      
+      let filteredInvoices = [...invoices];
+      let filteredExpenses = [...expenses];
+      
+      if (fromDate) {
+        const from = new Date(fromDate);
+        filteredInvoices = filteredInvoices.filter(inv => new Date(inv.createdAt) >= from);
+        filteredExpenses = filteredExpenses.filter(exp => new Date(exp.date) >= from);
+      }
+      
+      if (toDate) {
+        const to = new Date(toDate);
+        to.setDate(to.getDate() + 1); // لتشمل اليوم كامل
+        filteredInvoices = filteredInvoices.filter(inv => new Date(inv.createdAt) <= to);
+        filteredExpenses = filteredExpenses.filter(exp => new Date(exp.date) <= to);
+      }
+      
+      renderReportTable(filteredInvoices);
+      calculateFinancialReport(filteredInvoices, filteredExpenses);
+      renderSalesChart(filteredInvoices);
+    }
+    
+    // تصفية حسب الفترة
+    function filterReports(period) {
+      const now = new Date();
+      let fromDate = new Date();
+      
+      switch (period) {
+        case 'today':
+          fromDate.setHours(0, 0, 0, 0);
+          break;
+        case 'week':
+          fromDate.setDate(fromDate.getDate() - 7);
+          break;
+        case 'month':
+          fromDate.setMonth(fromDate.getMonth() - 1);
+          break;
+        case 'year':
+          fromDate.setFullYear(fromDate.getFullYear() - 1);
+          break;
+        case 'all':
+          fromDate = null;
+          break;
+      }
+      
+      if (fromDate) {
+        document.getElementById('fromDate').value = fromDate.toISOString().split('T')[0];
+      } else {
+        document.getElementById('fromDate').value = '';
+      }
+      
+      document.getElementById('toDate').value = now.toISOString().split('T')[0];
+      
+      applyFilters();
+    }
+    
+    // حساب التقرير المالي
+    function calculateFinancialReport(filteredInvoices = invoices, filteredExpenses = expenses) {
+      const totalSales = filteredInvoices.reduce((sum, inv) => sum + inv.total, 0);
+      const totalExpenses = filteredExpenses.reduce((sum, exp) => sum + exp.amount, 0);
+      const grossProfit = totalSales;
+      const netProfit = grossProfit - totalExpenses;
+      
+      document.getElementById('totalSales').textContent = totalSales.toLocaleString() + ' د.ع';
+      document.getElementById('totalExpenses').textContent = totalExpenses.toLocaleString() + ' د.ع';
+      document.getElementById('grossProfit').textContent = grossProfit.toLocaleString() + ' د.ع';
+      
+      const netProfitElement = document.getElementById('netProfit');
+      netProfitElement.textContent = netProfit.toLocaleString() + ' د.ع';
+      
+      if (netProfit < 0) {
+        netProfitElement.classList.add('negative-profit');
+      } else {
+        netProfitElement.classList.remove('negative-profit');
+      }
+    }
+    
+    // عرض جدول المبيعات
+    function renderReportTable(filteredInvoices = invoices) {
+      const tbody = document.getElementById('reportTableBody');
+      tbody.innerHTML = '';
+      
+      filteredInvoices.forEach(inv => {
+        let productsList = '';
+        let totalQty = 0;
+        
+        inv.lines.forEach(line => {
+          productsList += `${line.productName} (${line.qty}), `;
+          totalQty += line.qty;
+        });
+        
+        tbody.innerHTML += `
+          <tr>
+            <td>${inv.id}</td>
+            <td>${inv.date}</td>
+            <td>${productsList.slice(0, -2)}</td>
+            <td>${totalQty}</td>
+            <td>${inv.total.toLocaleString()} د.ع</td>
+            <td>${inv.paid.toLocaleString()} د.ع</td>
+            <td>${inv.change.toLocaleString()} د.ع</td>
+          </tr>
+        `;
+      });
+    }
+    
+    // تصفية جدول المبيعات
+    function filterReportTable() {
+      const searchTerm = document.getElementById('reportSearch').value.toLowerCase();
+      const rows = document.getElementById('reportTableBody').querySelectorAll('tr');
+      
+      rows.forEach(row => {
+        const invoiceNum = row.cells[0].textContent.toLowerCase();
+        
+        if (invoiceNum.includes(searchTerm)) {
+          row.style.display = '';
+        } else {
+          row.style.display = 'none';
+        }
+      });
+    }
+    
+    // رسم مخطط المبيعات
+    function renderSalesChart(filteredInvoices = invoices) {
+      const ctx = document.getElementById('salesChart').getContext('2d');
+      
+      // تجميع المبيعات حسب التاريخ
+      const salesByDate = {};
+      filteredInvoices.forEach(inv => {
+        const date = inv.date.split(',')[0]; // أخذ الجزء الخاص بالتاريخ فقط
+        salesByDate[date] = (salesByDate[date] || 0) + inv.total;
+      });
+      
+      const labels = Object.keys(salesByDate);
+      const data = Object.values(salesByDate);
+      
+      // حذف المخطط القديم إذا موجود
+      if (salesChart) {
+        salesChart.destroy();
+      }
+      
+      salesChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: 'المبيعات',
+            data: data,
+            backgroundColor: 'rgba(26, 188, 156, 0.7)',
+            borderColor: 'rgba(26, 188, 156, 1)',
+            borderWidth: 1
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: {
+              display: false
+            },
+            title: {
+              display: true,
+              text: 'المبيعات حسب التاريخ'
+            }
+          },
+          scales: {
+            y: {
+              beginAtZero: true
+            }
+          }
+        }
+      });
+    }
+    
+    // تصدير إلى Excel
+    function exportReportCSV() {
+      let csv = '\uFEFFرقم الفاتورة,التاريخ,المنتجات,الكمية,الإجمالي,المدفوع,الباقي\n';
+      
+      invoices.forEach(inv => {
+        let productsList = '';
+        let totalQty = 0;
+        
+        inv.lines.forEach(line => {
+          productsList += `${line.productName} (${line.qty}); `;
+          totalQty += line.qty;
+        });
+        
+        csv += `${inv.id},${inv.date},"${productsList.slice(0, -2)}",${totalQty},${inv.total},${inv.paid},${inv.change}\n`;
+      });
+      
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      
+      link.setAttribute('href', url);
+      link.setAttribute('download', 'تقرير_المبيعات.csv');
+      link.style.visibility = 'hidden';
+      
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+  </script>
+</body>
+</html>

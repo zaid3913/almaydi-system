@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <title>العميدي للألكترونيات - الديون</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+<link rel="stylesheet" href="sidebar.css">
+<script src="sidebar.js"></script>
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Cairo', sans-serif;
+      background: #f8f9fa;
+    }
+    .main {
+      margin-right: 20px;
+      padding: 20px;
+    }
+    .card {
+      background: #fff;
+      border-radius: 8px;
+      padding: 20px;
+      box-shadow: 0 2px 8px rgba(0,0,0,.05);
+      margin-bottom: 20px;
+    }
+    .btn-primary {
+      background: #1abc9c;
+      border: none;
+      padding: 8px 18px;
+      border-radius: 4px;
+      color: #fff;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .btn-outline-success {
+      background: transparent;
+      color: #198754;
+      border: 1px solid #198754;
+      padding: 8px 16px;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    th, td {
+      padding: 12px 10px;
+      text-align: center;
+      border: 1px solid #ddd;
+    }
+    thead {
+      background: #f1f1f1;
+    }
+    .action-btns button {
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 18px;
+      margin: 0 5px;
+    }
+    .search-box {
+      margin-bottom: 15px;
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+    input, select, textarea {
+      width: 100%;
+      padding: 8px;
+      margin: 4px 0 12px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      box-sizing: border-box;
+    }
+    .hidden {
+      display: none;
+    }
+    .status-paid {
+      color: #388e3c;
+      font-weight: bold;
+    }
+    .status-unpaid {
+      color: #e64a19;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+    <div class="sidebar">
+  <div class="sidebar-header">
+    <h2>العميدي للألكترونيات</h2>
+  </div>
+  
+  <ul class="sidebar-menu">
+    <li><a href="home.html"><i class="bi bi-house"></i> <span>الرئيسية</span></a></li>
+    <li><a href="products.html"><i class="bi bi-box-seam"></i> <span>المنتجات</span></a></li>
+    <li><a href="sales.html"><i class="bi bi-receipt"></i> <span>المبيعات</span></a></li>
+    <li><a href="debts.html"><i class="bi bi-credit-card"></i> <span>الديون</span></a></li>
+    <li><a href="reports.html"><i class="bi bi-graph-up"></i> <span>التقارير</span></a></li>
+    <li><a href="realprice.html"><i class="bi bi-tag"></i> <span>الأسعار الحقيقية</span></a></li>
+    <li><a href="expenses.html"><i class="bi bi-cash-stack"></i> <span>المصاريف</span></a></li>
+    <li><a href="settings.html"><i class="bi bi-gear"></i> <span>الإعدادات</span></a></li>
+    <div class="sidebar-footer"></div>
+    <button class="logout-btn" onclick="logout()">
+      <i class="bi bi-box-arrow-left"></i> <span>تسجيل الخروج</span>
+    </button>
+     </div>
+  </ul>
+</div>
+
+  <div class="main-content">
+    <h1>إدارة الديون</h1>
+    
+    <div class="card">
+      <button class="btn-primary" onclick="toggleForm('debtForm')">
+        <i class="bi bi-plus-circle"></i> إضافة دين جديد
+      </button>
+    </div>
+    
+    <div id="debtForm" class="card hidden">
+      <h3>تسجيل دين جديد</h3>
+      <form onsubmit="saveDebt(event)">
+        <input type="hidden" id="debtId">
+        <label>اسم المدين</label>
+        <input type="text" id="debtName" required>
+        
+        <label>رقم الهاتف</label>
+        <input type="text" id="debtPhone">
+        
+        <label>المبلغ (دينار عراقي)</label>
+        <input type="number" id="debtAmount" min="0" required>
+        
+        <label>تاريخ الاستحقاق</label>
+        <input type="date" id="debtDueDate">
+        
+        <label>ملاحظات</label>
+        <textarea id="debtNotes"></textarea>
+        
+        <button type="submit" class="btn-primary">حفظ</button>
+        <button type="button" class="btn-outline-success" onclick="toggleForm('debtForm')">إلغاء</button>
+      </form>
+    </div>
+    
+    <div class="card">
+      <h3>قائمة الديون</h3>
+      <div class="search-box">
+        <input type="text" id="debtSearch" placeholder="ابحث باسم المدين..." oninput="filterDebts()">
+        <button class="btn-outline-success" onclick="exportDebtsCSV()">تصدير Excel</button>
+      </div>
+      
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>اسم المدين</th>
+            <th>رقم الهاتف</th>
+            <th>المبلغ</th>
+            <th>تاريخ التسجيل</th>
+            <th>تاريخ الاستحقاق</th>
+            <th>الحالة</th>
+            <th>إجراءات</th>
+          </tr>
+        </thead>
+        <tbody id="debtTableBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <script>
+    // تهيئة Firebase
+    const firebaseConfig = {
+      apiKey: "AIzaSyB3T4pzPOvAw8mkfq_HXnpjPTR9orkj0ms",
+      authDomain: "almaydi-system.firebaseapp.com",
+      projectId: "almaydi-system",
+      storageBucket: "almaydi-system.appspot.com",
+      messagingSenderId: "783507593229",
+      appId: "1:783507593229:web:39087cbaa33268c62d5d44"
+    };
+    
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+    
+    // تأمين الصفحة
+    if(localStorage.getItem('isLoggedIn') !== 'true') {
+      window.location.href = 'index.html';
+    }
+    
+    // متغيرات عامة
+    let debts = [];
+    
+    // تحميل الديون عند بدء التشغيل
+    document.addEventListener('DOMContentLoaded', function() {
+      loadDebts();
+    });
+    
+    // تحميل الديون من Firebase
+    function loadDebts() {
+      db.collection('debts').orderBy('createdAt', 'desc').onSnapshot((snapshot) => {
+        debts = [];
+        snapshot.forEach((doc) => {
+          debts.push(doc.data());
+        });
+        renderDebts();
+      });
+    }
+    
+    // عرض الديون في الجدول
+    function renderDebts() {
+      const tbody = document.getElementById('debtTableBody');
+      tbody.innerHTML = '';
+      
+      debts.forEach((debt, index) => {
+        const statusClass = debt.paid ? 'status-paid' : 'status-unpaid';
+        const statusText = debt.paid ? 'مسدد' : 'غير مسدد';
+        
+        tbody.innerHTML += `
+          <tr>
+            <td>${index + 1}</td>
+            <td>${debt.name}</td>
+            <td>${debt.phone || '-'}</td>
+            <td>${debt.amount.toLocaleString()} د.ع</td>
+            <td>${debt.date || '-'}</td>
+            <td>${debt.dueDate || '-'}</td>
+            <td class="${statusClass}">${statusText}</td>
+            <td class="action-btns">
+              <button onclick="editDebt('${debt.id}')"><i class="bi bi-pencil-square"></i></button>
+              <button onclick="deleteDebt('${debt.id}')"><i class="bi bi-trash"></i></button>
+              ${!debt.paid ? `<button onclick="markAsPaid('${debt.id}')"><i class="bi bi-check-circle"></i></button>` : ''}
+            </td>
+          </tr>
+        `;
+      });
+    }
+    
+    // حفظ الدين
+    function saveDebt(e) {
+      e.preventDefault();
+      
+      const id = document.getElementById('debtId').value || Date.now().toString();
+      const debt = {
+        id: id,
+        name: document.getElementById('debtName').value.trim(),
+        phone: document.getElementById('debtPhone').value.trim(),
+        amount: parseFloat(document.getElementById('debtAmount').value),
+        dueDate: document.getElementById('debtDueDate').value,
+        date: new Date().toLocaleDateString('ar-IQ'),
+        notes: document.getElementById('debtNotes').value.trim(),
+        paid: false,
+        createdAt: new Date().toISOString()
+      };
+      
+      db.collection('debts').doc(id).set(debt)
+        .then(() => {
+          alert('تم حفظ الدين بنجاح');
+          toggleForm('debtForm');
+          document.getElementById('debtForm').reset();
+        })
+        .catch(error => {
+          console.error('Error saving debt: ', error);
+          alert('حدث خطأ أثناء حفظ الدين');
+        });
+    }
+    
+    // تعديل الدين
+    function editDebt(id) {
+      const debt = debts.find(d => d.id === id);
+      if (!debt) return;
+      
+      document.getElementById('debtId').value = debt.id;
+      document.getElementById('debtName').value = debt.name;
+      document.getElementById('debtPhone').value = debt.phone || '';
+      document.getElementById('debtAmount').value = debt.amount;
+      document.getElementById('debtDueDate').value = debt.dueDate || '';
+      document.getElementById('debtNotes').value = debt.notes || '';
+      
+      toggleForm('debtForm');
+    }
+    
+    // حذف الدين
+    function deleteDebt(id) {
+      if (!confirm('هل أنت متأكد من حذف هذا الدين؟')) return;
+      
+      db.collection('debts').doc(id).delete()
+        .then(() => {
+          alert('تم حذف الدين بنجاح');
+        })
+        .catch(error => {
+          console.error('Error deleting debt: ', error);
+          alert('حدث خطأ أثناء حذف الدين');
+        });
+    }
+    
+    // تسديد الدين
+    function markAsPaid(id) {
+      if (!confirm('هل تريد تسديد هذا الدين؟')) return;
+      
+      db.collection('debts').doc(id).update({ paid: true })
+        .then(() => {
+          alert('تم تسديد الدين بنجاح');
+        })
+        .catch(error => {
+          console.error('Error marking debt as paid: ', error);
+          alert('حدث خطأ أثناء تسديد الدين');
+        });
+    }
+    
+    // تصدير إلى Excel
+    function exportDebtsCSV() {
+      let csv = '\uFEFF#,اسم المدين,رقم الهاتف,المبلغ,تاريخ التسجيل,تاريخ الاستحقاق,الحالة,ملاحظات\n';
+      
+      debts.forEach((d, i) => {
+        csv += `${i + 1},${d.name},${d.phone || ''},${d.amount},"${d.date || ''}","${d.dueDate || ''}",${d.paid ? 'مسدد' : 'غير مسدد'},"${d.notes || ''}"\n`;
+      });
+      
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      
+      link.setAttribute('href', url);
+      link.setAttribute('download', 'الديون.csv');
+      link.style.visibility = 'hidden';
+      
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+    
+    // تصفية الديون
+    function filterDebts() {
+      const searchTerm = document.getElementById('debtSearch').value.toLowerCase();
+      const rows = document.getElementById('debtTableBody').querySelectorAll('tr');
+      
+      rows.forEach(row => {
+        const name = row.cells[1].textContent.toLowerCase();
+        
+        if (name.includes(searchTerm)) {
+          row.style.display = '';
+        } else {
+          row.style.display = 'none';
+        }
+      });
+    }
+    
+    // تبديل عرض النموذج
+    function toggleForm(formId) {
+      const form = document.getElementById(formId);
+      form.classList.toggle('hidden');
+      
+      if (!form.classList.contains('hidden')) {
+        form.querySelector('input').focus();
+      }
+    }
+  </script>
+</body>
+</html>

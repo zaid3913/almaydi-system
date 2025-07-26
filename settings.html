@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <title>العميدي للألكترونيات - الإعدادات</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+<link rel="stylesheet" href="sidebar.css">
+<script src="sidebar.js"></script>
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Cairo', sans-serif;
+      background: #f8f9fa;
+    }
+    .main {
+      margin-right: 20px;
+      padding: 20px;
+    }
+    .card {
+      background: #fff;
+      border-radius: 8px;
+      padding: 20px;
+      box-shadow: 0 2px 8px rgba(0,0,0,.05);
+      margin-bottom: 20px;
+    }
+    .btn-primary {
+      background: #1abc9c;
+      border: none;
+      padding: 8px 18px;
+      border-radius: 4px;
+      color: #fff;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .btn-outline-success {
+      background: transparent;
+      color: #198754;
+      border: 1px solid #198754;
+      padding: 8px 16px;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    th, td {
+      padding: 12px 10px;
+      text-align: center;
+      border: 1px solid #ddd;
+    }
+    thead {
+      background: #f1f1f1;
+    }
+    .action-btns button {
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 18px;
+      margin: 0 5px;
+    }
+    .search-box {
+      margin-bottom: 15px;
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+    input, select {
+      width: 100%;
+      padding: 8px;
+      margin: 4px 0 12px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      box-sizing: border-box;
+    }
+    .hidden {
+      display: none;
+    }
+    .logout-btn {
+      background: #e74c3c !important;
+      color: white !important;
+      border: none;
+      padding: 10px;
+      width: 100%;
+      border-radius: 4px;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 15px;
+      transition: background 0.3s;
+    }
+    .logout-btn:hover {
+      background: #c0392b !important;
+    }
+    .settings-section {
+      margin-bottom: 30px;
+    }
+    .settings-section h3 {
+      border-bottom: 1px solid #eee;
+      padding-bottom: 10px;
+    }
+    .dark-mode-toggle {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .switch {
+      position: relative;
+      display: inline-block;
+      width: 60px;
+      height: 34px;
+    }
+    .switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: #ccc;
+      transition: .4s;
+      border-radius: 34px;
+    }
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 26px;
+      width: 26px;
+      left: 4px;
+      bottom: 4px;
+      background-color: white;
+      transition: .4s;
+      border-radius: 50%;
+    }
+    input:checked + .slider {
+      background-color: #1abc9c;
+    }
+    input:checked + .slider:before {
+      transform: translateX(26px);
+    }
+  </style>
+</head>
+<body>
+    <div class="sidebar">
+  <div class="sidebar-header">
+    <h2>العميدي للألكترونيات</h2>
+  </div>
+  
+  <ul class="sidebar-menu">
+    <li><a href="home.html"><i class="bi bi-house"></i> <span>الرئيسية</span></a></li>
+    <li><a href="products.html"><i class="bi bi-box-seam"></i> <span>المنتجات</span></a></li>
+    <li><a href="sales.html"><i class="bi bi-receipt"></i> <span>المبيعات</span></a></li>
+    <li><a href="debts.html"><i class="bi bi-credit-card"></i> <span>الديون</span></a></li>
+    <li><a href="reports.html"><i class="bi bi-graph-up"></i> <span>التقارير</span></a></li>
+    <li><a href="realprice.html"><i class="bi bi-tag"></i> <span>الأسعار الحقيقية</span></a></li>
+    <li><a href="expenses.html"><i class="bi bi-cash-stack"></i> <span>المصاريف</span></a></li>
+    <li><a href="settings.html"><i class="bi bi-gear"></i> <span>الإعدادات</span></a></li>
+     <div class="sidebar-footer">
+    <button class="logout-btn" onclick="logout()">
+      <i class="bi bi-box-arrow-left"></i> <span>تسجيل الخروج</span>
+    </button>
+  </div>
+  </ul>
+  
+</div>
+
+  <div class="main-content">
+    <h1><i class="bi bi-gear"></i> الإعدادات</h1>
+    
+    <div class="card settings-section">
+      <h3>المظهر</h3>
+      <div class="dark-mode-toggle">
+        <label class="switch">
+          <input type="checkbox" id="darkModeToggle" onchange="toggleDarkMode()">
+          <span class="slider"></span>
+        </label>
+        <span>الوضع الليلي</span>
+      </div>
+    </div>
+    
+    <div class="card settings-section">
+      <h3>إدارة المستخدمين</h3>
+      <button class="btn-primary" onclick="toggleForm('userForm')">
+        <i class="bi bi-person-plus"></i> إضافة مستخدم جديد
+      </button>
+      
+      <div id="userForm" class="card hidden">
+        <h4>إضافة مستخدم جديد</h4>
+        <form onsubmit="saveUser(event)">
+          <input type="hidden" id="userId">
+          <label>الاسم الكامل</label>
+          <input type="text" id="userName" required>
+          
+          <label>البريد الإلكتروني</label>
+          <input type="email" id="userEmail" required>
+          
+          <label>كلمة المرور</label>
+          <input type="password" id="userPassword" required>
+          
+          <label>نوع الحساب</label>
+          <select id="userRole">
+            <option value="admin">أدمن</option>
+            <option value="user">مستخدم عادي</option>
+          </select>
+          
+          <button type="submit" class="btn-primary">حفظ</button>
+          <button type="button" class="btn-outline-success" onclick="toggleForm('userForm')">إلغاء</button>
+        </form>
+      </div>
+      
+      <div class="search-box">
+        <input type="text" id="userSearch" placeholder="ابحث بالاسم أو البريد..." oninput="filterUsers()">
+      </div>
+      
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>الاسم</th>
+            <th>البريد الإلكتروني</th>
+            <th>الصلاحية</th>
+            <th>إجراءات</th>
+          </tr>
+        </thead>
+        <tbody id="userTableBody"></tbody>
+      </table>
+    </div>
+    
+    <button class="logout-btn" onclick="logout()">
+      <i class="bi bi-box-arrow-left"></i> تسجيل الخروج
+    </button>
+  </div>
+
+  <script>
+    // تهيئة Firebase
+    const firebaseConfig = {
+      apiKey: "AIzaSyB3T4pzPOvAw8mkfq_HXnpjPTR9orkj0ms",
+      authDomain: "almaydi-system.firebaseapp.com",
+      projectId: "almaydi-system",
+      storageBucket: "almaydi-system.appspot.com",
+      messagingSenderId: "783507593229",
+      appId: "1:783507593229:web:39087cbaa33268c62d5d44"
+    };
+    
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+    const auth = firebase.auth();
+    
+    // تأمين الصفحة
+    if(localStorage.getItem('isLoggedIn') !== 'true') {
+      window.location.href = 'index.html';
+    }
+    
+    // متغيرات عامة
+    let users = [];
+    
+    // تحميل المستخدمين عند بدء التشغيل
+    document.addEventListener('DOMContentLoaded', function() {
+      loadUsers();
+      checkDarkMode();
+    });
+    
+    // تحميل المستخدمين من Firebase
+    function loadUsers() {
+      db.collection('users').onSnapshot((snapshot) => {
+        users = [];
+        snapshot.forEach((doc) => {
+          users.push(doc.data());
+        });
+        renderUsers();
+      });
+    }
+    
+    // عرض المستخدمين في الجدول
+    function renderUsers() {
+      const tbody = document.getElementById('userTableBody');
+      tbody.innerHTML = '';
+      
+      users.forEach((user, index) => {
+        tbody.innerHTML += `
+          <tr>
+            <td>${index + 1}</td>
+            <td>${user.name}</td>
+            <td>${user.email}</td>
+            <td>${user.role === 'admin' ? 'أدمن' : 'مستخدم'}</td>
+            <td class="action-btns">
+              <button onclick="editUser('${user.id}')"><i class="bi bi-pencil-square"></i></button>
+              <button onclick="deleteUser('${user.id}')"><i class="bi bi-trash"></i></button>
+            </td>
+          </tr>
+        `;
+      });
+    }
+    
+    // حفظ المستخدم
+    function saveUser(e) {
+      e.preventDefault();
+      
+      const id = document.getElementById('userId').value || Date.now().toString();
+      const email = document.getElementById('userEmail').value.trim();
+      const password = document.getElementById('userPassword').value.trim();
+      const userData = {
+        id: id,
+        name: document.getElementById('userName').value.trim(),
+        email: email,
+        role: document.getElementById('userRole').value,
+        createdAt: new Date().toISOString()
+      };
+      
+      if (id === document.getElementById('userId').value) {
+        // تحديث المستخدم الموجود
+        db.collection('users').doc(id).update(userData)
+          .then(() => {
+            alert('تم تحديث المستخدم بنجاح');
+            toggleForm('userForm');
+            document.getElementById('userForm').reset();
+          })
+          .catch(error => {
+            console.error('Error updating user: ', error);
+            alert('حدث خطأ أثناء تحديث المستخدم');
+          });
+      } else {
+        // إنشاء مستخدم جديد
+        auth.createUserWithEmailAndPassword(email, password)
+          .then((userCredential) => {
+            return db.collection('users').doc(id).set(userData);
+          })
+          .then(() => {
+            alert('تم إنشاء المستخدم بنجاح');
+            toggleForm('userForm');
+            document.getElementById('userForm').reset();
+          })
+          .catch(error => {
+            console.error('Error creating user: ', error);
+            alert('حدث خطأ أثناء إنشاء المستخدم');
+          });
+      }
+    }
+    
+    // تعديل المستخدم
+    function editUser(id) {
+      const user = users.find(u => u.id === id);
+      if (!user) return;
+      
+      document.getElementById('userId').value = user.id;
+      document.getElementById('userName').value = user.name;
+      document.getElementById('userEmail').value = user.email;
+      document.getElementById('userRole').value = user.role;
+      
+      toggleForm('userForm');
+    }
+    
+    // حذف المستخدم
+    function deleteUser(id) {
+      if (!confirm('هل أنت متأكد من حذف هذا المستخدم؟')) return;
+      
+      const user = users.find(u => u.id === id);
+      if (!user) return;
+      
+      // حذف من المصادقة أولاً
+      auth.getUserByEmail(user.email)
+        .then((userRecord) => {
+          return auth.deleteUser(userRecord.uid);
+        })
+        .then(() => {
+          // ثم حذف من قاعدة البيانات
+          return db.collection('users').doc(id).delete();
+        })
+        .then(() => {
+          alert('تم حذف المستخدم بنجاح');
+        })
+        .catch(error => {
+          console.error('Error deleting user: ', error);
+          alert('حدث خطأ أثناء حذف المستخدم');
+        });
+    }
+    
+    // تصفية المستخدمين
+    function filterUsers() {
+      const searchTerm = document.getElementById('userSearch').value.toLowerCase();
+      const rows = document.getElementById('userTableBody').querySelectorAll('tr');
+      
+      rows.forEach(row => {
+        const name = row.cells[1].textContent.toLowerCase();
+        const email = row.cells[2].textContent.toLowerCase();
+        
+        if (name.includes(searchTerm) || email.includes(searchTerm)) {
+          row.style.display = '';
+        } else {
+          row.style.display = 'none';
+        }
+      });
+    }
+    
+    // تبديل عرض النموذج
+    function toggleForm(formId) {
+      const form = document.getElementById(formId);
+      form.classList.toggle('hidden');
+      
+      if (!form.classList.contains('hidden')) {
+        form.querySelector('input').focus();
+      }
+    }
+    
+    // تسجيل الخروج
+    function logout() {
+      auth.signOut().then(() => {
+        localStorage.removeItem('isLoggedIn');
+        window.location.href = 'index.html';
+      });
+    }
+    
+    // تبديل الوضع الليلي
+    function toggleDarkMode() {
+      const isDarkMode = document.getElementById('darkModeToggle').checked;
+      localStorage.setItem('darkMode', isDarkMode);
+      applyDarkMode(isDarkMode);
+    }
+    
+    // تطبيق الوضع الليلي
+    function applyDarkMode(isDarkMode) {
+      if (isDarkMode) {
+        document.body.classList.add('dark-mode');
+      } else {
+        document.body.classList.remove('dark-mode');
+      }
+    }
+    
+    // التحقق من إعدادات الوضع الليلي
+    function checkDarkMode() {
+      const isDarkMode = localStorage.getItem('darkMode') === 'true';
+      document.getElementById('darkModeToggle').checked = isDarkMode;
+      applyDarkMode(isDarkMode);
+    }
+  </script>
+</body>
+</html>

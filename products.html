@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <title>العميدي للألكترونيات - المنتجات</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js"></script>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+<link rel="stylesheet" href="sidebar.css">
+<script src="sidebar.js"></script>
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Cairo', sans-serif;
+      background: #f8f9fa;
+    }
+    .main {
+      margin-right: 20px;
+      padding: 20px;
+    }
+    .card {
+      background: #fff;
+      border-radius: 8px;
+      padding: 20px;
+      box-shadow: 0 2px 8px rgba(0,0,0,.05);
+      margin-bottom: 20px;
+    }
+    .btn-primary {
+      background: #1abc9c;
+      border: none;
+      padding: 8px 18px;
+      border-radius: 4px;
+      color: #fff;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .btn-outline-success {
+      background: transparent;
+      color: #198754;
+      border: 1px solid #198754;
+      padding: 8px 16px;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    th, td {
+      padding: 12px 10px;
+      text-align: center;
+      border: 1px solid #ddd;
+    }
+    thead {
+      background: #f1f1f1;
+    }
+    .action-btns button {
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 18px;
+      margin: 0 5px;
+    }
+    .search-box {
+      margin-bottom: 15px;
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+    input, select, textarea {
+      width: 100%;
+      padding: 8px;
+      margin: 4px 0 12px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      box-sizing: border-box;
+    }
+    .hidden {
+      display: none;
+    }
+    #barcodeScanner {
+      margin: 10px 0;
+    }
+    #scannerContainer {
+      width: 100%;
+      height: 200px;
+      border: 1px solid #ccc;
+    }
+  </style>
+</head>
+<body>
+    <div class="sidebar">
+  <div class="sidebar-header">
+    <h2>العميدي للألكترونيات</h2>
+  </div>
+  
+  <ul class="sidebar-menu">
+    <li><a href="home.html"><i class="bi bi-house"></i> <span>الرئيسية</span></a></li>
+    <li><a href="products.html"><i class="bi bi-box-seam"></i> <span>المنتجات</span></a></li>
+    <li><a href="sales.html"><i class="bi bi-receipt"></i> <span>المبيعات</span></a></li>
+    <li><a href="debts.html"><i class="bi bi-credit-card"></i> <span>الديون</span></a></li>
+    <li><a href="reports.html"><i class="bi bi-graph-up"></i> <span>التقارير</span></a></li>
+    <li><a href="realprice.html"><i class="bi bi-tag"></i> <span>الأسعار الحقيقية</span></a></li>
+    <li><a href="expenses.html"><i class="bi bi-cash-stack"></i> <span>المصاريف</span></a></li>
+    <li><a href="settings.html"><i class="bi bi-gear"></i> <span>الإعدادات</span></a></li>
+    <div class="sidebar-footer">
+    <button class="logout-btn" onclick="logout()">
+      <i class="bi bi-box-arrow-left"></i> <span>تسجيل الخروج</span>
+    </button>
+  </div>
+  </ul>
+  
+</div>
+
+  <div class="main-content">
+    <h1>إدارة المنتجات</h1>
+    
+    <div class="card">
+      <button class="btn-primary" onclick="toggleForm('productForm')">
+        <i class="bi bi-plus-circle"></i> إضافة منتج جديد
+      </button>
+    </div>
+
+    <div id="productForm" class="card hidden">
+      <h3>إضافة منتج جديد</h3>
+      <form onsubmit="saveProduct(event)">
+        <input type="hidden" id="productId">
+        <label>الاسم</label><input type="text" id="prodName" required>
+        <label>النوع</label><input type="text" id="prodType" required>
+        <label>باركود المنتج</label>
+        <div style="display: flex; gap: 10px;">
+          <input type="text" id="prodBarcode" placeholder="مسح أو إدخال يدوي">
+          <button type="button" class="btn-outline-success" onclick="startBarcodeScanner()">
+            <i class="bi bi-upc-scan"></i> مسح
+          </button>
+        </div>
+        <div id="barcodeScanner" style="display:none;">
+          <div id="scannerContainer"></div>
+          <button type="button" class="btn-outline-success" onclick="stopBarcodeScanner()">إيقاف</button>
+        </div>
+        <label>السعر (دينار عراقي)</label><input type="number" id="prodPrice" min="0" required>
+        <label>الكمية</label><input type="number" id="prodQty" min="0" required>
+        <label>ملاحظات</label><textarea id="prodNotes"></textarea>
+        <button type="submit" class="btn-primary">حفظ</button>
+        <button type="button" class="btn-outline-success" onclick="toggleForm('productForm')">إلغاء</button>
+      </form>
+    </div>
+    
+    <div class="card">
+      <h3>قائمة المنتجات</h3>
+      <div class="search-box">
+        <input type="text" id="prodSearch" placeholder="ابحث بالاسم أو النوع..." oninput="filterProducts()">
+        <button class="btn-outline-success" onclick="exportProductsCSV()">تصدير Excel</button>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>الاسم</th>
+            <th>النوع</th>
+            <th>الباركود</th>
+            <th>الكمية</th>
+            <th>السعر (د.ع)</th>
+            <th>ملاحظات</th>
+            <th>إجراءات</th>
+          </tr>
+        </thead>
+        <tbody id="productTableBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <script>
+    // تهيئة Firebase
+    const firebaseConfig = {
+      apiKey: "AIzaSyB3T4pzPOvAw8mkfq_HXnpjPTR9orkj0ms",
+      authDomain: "almaydi-system.firebaseapp.com",
+      projectId: "almaydi-system",
+      storageBucket: "almaydi-system.appspot.com",
+      messagingSenderId: "783507593229",
+      appId: "1:783507593229:web:39087cbaa33268c62d5d44"
+    };
+    
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+    
+    // تأمين الصفحة
+    if(localStorage.getItem('isLoggedIn') !== 'true') {
+      window.location.href = 'index.html';
+    }
+    
+    // متغيرات عامة
+    let products = [];
+    let isScanning = false;
+    
+    // تحميل المنتجات عند بدء التشغيل
+    document.addEventListener('DOMContentLoaded', function() {
+      loadProducts();
+    });
+    
+    // تحميل المنتجات من Firebase
+    function loadProducts() {
+      db.collection('products').onSnapshot((snapshot) => {
+        products = [];
+        snapshot.forEach((doc) => {
+          products.push(doc.data());
+        });
+        renderProducts();
+      });
+    }
+    
+    // عرض المنتجات في الجدول
+    function renderProducts() {
+      const tbody = document.getElementById('productTableBody');
+      tbody.innerHTML = '';
+      
+      products.forEach((p, i) => {
+        tbody.innerHTML += `
+          <tr>
+            <td>${i + 1}</td>
+            <td>${p.name}</td>
+            <td>${p.type}</td>
+            <td>${p.barcode || '-'}</td>
+            <td>${p.quantity}</td>
+            <td>${p.price.toLocaleString()}</td>
+            <td>${p.notes || '-'}</td>
+            <td class="action-btns">
+              <button onclick="editProduct('${p.id}')"><i class="bi bi-pencil-square"></i></button>
+              <button onclick="deleteProduct('${p.id}')"><i class="bi bi-trash"></i></button>
+            </td>
+          </tr>
+        `;
+      });
+    }
+    
+    // حفظ المنتج
+    function saveProduct(e) {
+      e.preventDefault();
+      
+      const id = document.getElementById('productId').value || Date.now().toString();
+      const product = {
+        id: id,
+        name: document.getElementById('prodName').value.trim(),
+        type: document.getElementById('prodType').value.trim(),
+        barcode: document.getElementById('prodBarcode').value.trim(),
+        price: parseFloat(document.getElementById('prodPrice').value),
+        quantity: parseInt(document.getElementById('prodQty').value),
+        notes: document.getElementById('prodNotes').value.trim(),
+        createdAt: new Date().toISOString()
+      };
+      
+      db.collection('products').doc(id).set(product)
+        .then(() => {
+          alert('تم حفظ المنتج بنجاح');
+          toggleForm('productForm');
+          document.getElementById('productForm').reset();
+        })
+        .catch(error => {
+          console.error('Error saving product: ', error);
+          alert('حدث خطأ أثناء حفظ المنتج');
+        });
+    }
+    
+    // تعديل المنتج
+    function editProduct(id) {
+      const product = products.find(p => p.id === id);
+      if (!product) return;
+      
+      document.getElementById('productId').value = product.id;
+      document.getElementById('prodName').value = product.name;
+      document.getElementById('prodType').value = product.type;
+      document.getElementById('prodBarcode').value = product.barcode || '';
+      document.getElementById('prodPrice').value = product.price;
+      document.getElementById('prodQty').value = product.quantity;
+      document.getElementById('prodNotes').value = product.notes || '';
+      
+      toggleForm('productForm');
+    }
+    
+    // حذف المنتج
+    function deleteProduct(id) {
+      if (!confirm('هل أنت متأكد من حذف هذا المنتج؟')) return;
+      
+      db.collection('products').doc(id).delete()
+        .then(() => {
+          alert('تم حذف المنتج بنجاح');
+        })
+        .catch(error => {
+          console.error('Error deleting product: ', error);
+          alert('حدث خطأ أثناء حذف المنتج');
+        });
+    }
+    
+    // تصدير إلى Excel
+    function exportProductsCSV() {
+      let csv = '\uFEFF#,الاسم,النوع,الباركود,الكمية,السعر,ملاحظات\n';
+      
+      products.forEach((p, i) => {
+        csv += `${i + 1},${p.name},${p.type},${p.barcode || ''},${p.quantity},${p.price},"${p.notes || ''}"\n`;
+      });
+      
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      
+      link.setAttribute('href', url);
+      link.setAttribute('download', 'المنتجات.csv');
+      link.style.visibility = 'hidden';
+      
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+    
+    // تصفية المنتجات
+    function filterProducts() {
+      const searchTerm = document.getElementById('prodSearch').value.toLowerCase();
+      const rows = document.getElementById('productTableBody').querySelectorAll('tr');
+      
+      rows.forEach(row => {
+        const name = row.cells[1].textContent.toLowerCase();
+        const type = row.cells[2].textContent.toLowerCase();
+        
+        if (name.includes(searchTerm) || type.includes(searchTerm)) {
+          row.style.display = '';
+        } else {
+          row.style.display = 'none';
+        }
+      });
+    }
+    
+    // تبديل عرض النموذج
+    function toggleForm(formId) {
+      const form = document.getElementById(formId);
+      form.classList.toggle('hidden');
+      
+      if (!form.classList.contains('hidden')) {
+        form.querySelector('input').focus();
+      }
+    }
+    
+    // مسح الباركود
+    function startBarcodeScanner() {
+      const scannerDiv = document.getElementById('barcodeScanner');
+      scannerDiv.style.display = 'block';
+      
+      Quagga.init({
+        inputStream: {
+          name: "Live",
+          type: "LiveStream",
+          target: document.querySelector('#scannerContainer'),
+          constraints: {
+            width: 480,
+            height: 320,
+            facingMode: "environment"
+          },
+        },
+        decoder: {
+          readers: ["ean_reader", "ean_8_reader", "code_128_reader", "code_39_reader"]
+        },
+      }, function(err) {
+        if (err) {
+          console.error(err);
+          alert('حدث خطأ في تشغيل الماسح الضوئي');
+          return;
+        }
+        
+        isScanning = true;
+        Quagga.start();
+      });
+      
+      Quagga.onDetected(function(result) {
+        if (!isScanning) return;
+        
+        const code = result.codeResult.code;
+        document.getElementById('prodBarcode').value = code;
+        stopBarcodeScanner();
+      });
+    }
+    
+    function stopBarcodeScanner() {
+      if (isScanning) {
+        Quagga.stop();
+        isScanning = false;
+      }
+      document.getElementById('barcodeScanner').style.display = 'none';
+    }
+  </script>
+</body>
+</html>

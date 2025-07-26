@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <title>العميدي للألكترونيات - المبيعات</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js"></script>
+<link rel="stylesheet" href="sidebar.css">
+<script src="sidebar.js"></script>
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Cairo', sans-serif;
+      background: #f8f9fa;
+    }
+    .main {
+      margin-right: 20px;
+      padding: 20px;
+    }
+    .card {
+      background: #fff;
+      border-radius: 8px;
+      padding: 20px;
+      box-shadow: 0 2px 8px rgba(0,0,0,.05);
+      margin-bottom: 20px;
+    }
+    .btn-primary {
+      background: #1abc9c;
+      border: none;
+      padding: 8px 18px;
+      border-radius: 4px;
+      color: #fff;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .btn-outline-success {
+      background: transparent;
+      color: #198754;
+      border: 1px solid #198754;
+      padding: 8px 16px;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    th, td {
+      padding: 12px 10px;
+      text-align: center;
+      border: 1px solid #ddd;
+    }
+    thead {
+      background: #f1f1f1;
+    }
+    .action-btns button {
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 18px;
+      margin: 0 5px;
+    }
+    input, select {
+      width: 100%;
+      padding: 8px;
+      margin: 4px 0 12px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      box-sizing: border-box;
+    }
+    #barcodeScanner {
+      margin: 10px 0;
+    }
+    #scannerContainer {
+      width: 100%;
+      height: 200px;
+      border: 1px solid #ccc;
+    }
+    .invoice-summary {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 15px;
+      margin: 15px 0;
+    }
+    .invoice-summary div {
+      background: #f8f9fa;
+      padding: 10px;
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body>
+    <div class="sidebar">
+  <div class="sidebar-header">
+    <h2>العميدي للألكترونيات</h2>
+  </div>
+  
+  <ul class="sidebar-menu">
+    <li><a href="home.html"><i class="bi bi-house"></i> <span>الرئيسية</span></a></li>
+    <li><a href="products.html"><i class="bi bi-box-seam"></i> <span>المنتجات</span></a></li>
+    <li><a href="sales.html"><i class="bi bi-receipt"></i> <span>المبيعات</span></a></li>
+    <li><a href="debts.html"><i class="bi bi-credit-card"></i> <span>الديون</span></a></li>
+    <li><a href="reports.html"><i class="bi bi-graph-up"></i> <span>التقارير</span></a></li>
+    <li><a href="realprice.html"><i class="bi bi-tag"></i> <span>الأسعار الحقيقية</span></a></li>
+    <li><a href="expenses.html"><i class="bi bi-cash-stack"></i> <span>المصاريف</span></a></li>
+    <li><a href="settings.html"><i class="bi bi-gear"></i> <span>الإعدادات</span></a></li>
+    <div class="sidebar-footer">
+    <button class="logout-btn" onclick="logout()">
+      <i class="bi bi-box-arrow-left"></i> <span>تسجيل الخروج</span>
+    </button>
+  </div>
+  </ul>
+  
+</div>
+
+  <div class="main-content">
+    <h1>إصدار فاتورة مبيعات</h1>
+    
+    <div class="card">
+      <label>اختر المنتج</label>
+      <select id="saleProductSelect" onchange="updateProductPrice()"></select>
+      
+      <label>أو امسح الباركود</label>
+      <div style="display: flex; gap: 10px;">
+        <input type="text" id="saleBarcode" placeholder="امسح هنا" onkeyup="handleBarcodeSale(this.value)">
+        <button type="button" class="btn-outline-success" onclick="startBarcodeScanner()">
+          <i class="bi bi-upc-scan"></i> مسح
+        </button>
+      </div>
+      <div id="barcodeScanner" style="display:none;">
+        <div id="scannerContainer"></div>
+        <button type="button" class="btn-outline-success" onclick="stopBarcodeScanner()">إيقاف</button>
+      </div>
+      
+      <label>الكمية</label>
+      <input type="number" id="saleQty" min="1" value="1" oninput="calcLineTotal()">
+      
+      <label>السعر للوحدة (دينار عراقي)</label>
+      <input type="number" id="salePrice" readonly>
+      
+      <label>السعر الكلي (دينار عراقي)</label>
+      <input type="number" id="saleLineTotal" readonly>
+      
+      <button class="btn-primary" onclick="addToInvoice()">إضافة إلى الفاتورة</button>
+    </div>
+    
+    <div class="card">
+      <h3>الفاتورة الحالية</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>المنتج</th>
+            <th>الكمية</th>
+            <th>السعر</th>
+            <th>الإجمالي</th>
+            <th>حذف</th>
+          </tr>
+        </thead>
+        <tbody id="invoiceBody"></tbody>
+      </table>
+      
+      <div class="invoice-summary">
+        <div>
+          <strong>الإجمالي قبل الخصم:</strong>
+          <span id="grandTotalDisplay">0 د.ع</span>
+        </div>
+        <div>
+          <strong>الخصم:</strong>
+          <input type="number" id="discount" min="0" value="0" oninput="calcFinal()" style="width: 80px;">
+        </div>
+        <div>
+          <strong>صافي الفاتورة:</strong>
+          <span id="netTotalDisplay">0 د.ع</span>
+        </div>
+      </div>
+      
+      <div class="invoice-summary">
+        <div>
+          <label for="paid">المبلغ المدفوع:</label>
+          <input type="number" id="paid" min="0" oninput="calcFinal()">
+        </div>
+        <div>
+          <strong>الباقي:</strong>
+          <span id="changeDisplay">0 د.ع</span>
+        </div>
+      </div>
+      
+      <button class="btn-primary" onclick="confirmSale()">تأكيد البيع وطباعة</button>
+      <button class="btn-outline-success" onclick="clearInvoice()">إلغاء الفاتورة</button>
+    </div>
+  </div>
+
+  <script>
+    // تهيئة Firebase
+    const firebaseConfig = {
+      apiKey: "AIzaSyB3T4pzPOvAw8mkfq_HXnpjPTR9orkj0ms",
+      authDomain: "almaydi-system.firebaseapp.com",
+      projectId: "almaydi-system",
+      storageBucket: "almaydi-system.appspot.com",
+      messagingSenderId: "783507593229",
+      appId: "1:783507593229:web:39087cbaa33268c62d5d44"
+    };
+    
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+    
+    // تأمين الصفحة
+    if(localStorage.getItem('isLoggedIn') !== 'true') {
+      window.location.href = 'index.html';
+    }
+    
+    // متغيرات عامة
+    let products = [];
+    let invoiceLines = [];
+    let isScanning = false;
+    
+    // تحميل المنتجات عند بدء التشغيل
+    document.addEventListener('DOMContentLoaded', function() {
+      loadProducts();
+    });
+    
+    // تحميل المنتجات من Firebase
+    function loadProducts() {
+  db.collection('products').onSnapshot((snapshot) => {
+    products = [];
+    snapshot.forEach((doc) => {
+      const data = doc.data();
+      data.id = doc.id;  // ← مهم جدًا
+      products.push(data);
+    });
+    refreshSaleSelect();
+  });
+}
+
+    
+    // تحديث قائمة المنتجات في select
+    function refreshSaleSelect() {
+      const select = document.getElementById('saleProductSelect');
+      select.innerHTML = '<option value="">-- اختر منتج --</option>';
+      
+      products.forEach(product => {
+        if (product.quantity > 0) {
+          const option = document.createElement('option');
+          option.value = product.id;
+          option.textContent = `${product.name} (${product.type}) - ${product.price.toLocaleString()} د.ع`;
+          select.appendChild(option);
+        }
+      });
+    }
+    
+    // تحديث سعر المنتج عند الاختيار
+    function updateProductPrice() {
+      const productId = document.getElementById('saleProductSelect').value;
+      if (!productId) return;
+      
+      const product = products.find(p => p.id === productId);
+      if (!product) return;
+      
+      document.getElementById('salePrice').value = product.price;
+      calcLineTotal();
+    }
+    
+    // حساب الإجمالي للصنف
+    function calcLineTotal() {
+      const price = parseFloat(document.getElementById('salePrice').value) || 0;
+      const qty = parseInt(document.getElementById('saleQty').value) || 0;
+      
+      document.getElementById('saleLineTotal').value = (price * qty).toLocaleString();
+    }
+    
+    // إضافة صنف للفاتورة
+    function addToInvoice() {
+      const productId = document.getElementById('saleProductSelect').value;
+      const qty = parseInt(document.getElementById('saleQty').value);
+      
+      if (!productId || !qty || qty < 1) {
+        alert('الرجاء اختيار منتج وإدخال كمية صحيحة');
+        return;
+      }
+      
+      const product = products.find(p => p.id === productId);
+      if (!product) return;
+      
+      if (product.quantity < qty) {
+        alert('الكمية المطلوبة غير متوفرة في المخزن');
+        return;
+      }
+      
+      const lineTotal = product.price * qty;
+      
+      invoiceLines.push({
+        productId: product.id,
+        productName: product.name,
+        qty: qty,
+        price: product.price,
+        lineTotal: lineTotal
+      });
+      
+      renderInvoice();
+      calcFinal();
+      
+      // إعادة تعيين الحقول
+      document.getElementById('saleProductSelect').value = '';
+      document.getElementById('saleQty').value = 1;
+      document.getElementById('salePrice').value = '';
+      document.getElementById('saleLineTotal').value = '';
+    }
+    
+    // عرض الفاتورة
+    function renderInvoice() {
+      const tbody = document.getElementById('invoiceBody');
+      tbody.innerHTML = '';
+      
+      let grandTotal = 0;
+      
+      invoiceLines.forEach((line, index) => {
+        grandTotal += line.lineTotal;
+        
+        tbody.innerHTML += `
+          <tr>
+            <td>${index + 1}</td>
+            <td>${line.productName}</td>
+            <td>${line.qty}</td>
+            <td>${line.price.toLocaleString()}</td>
+            <td>${line.lineTotal.toLocaleString()}</td>
+            <td><button onclick="removeFromInvoice(${index})"><i class="bi bi-trash"></i></button></td>
+          </tr>
+        `;
+      });
+      
+      document.getElementById('grandTotalDisplay').textContent = grandTotal.toLocaleString() + ' د.ع';
+    }
+    
+    // إزالة صنف من الفاتورة
+    function removeFromInvoice(index) {
+      invoiceLines.splice(index, 1);
+      renderInvoice();
+      calcFinal();
+    }
+    
+    // حساب الإجمالي النهائي
+    function calcFinal() {
+      const grandTotal = invoiceLines.reduce((sum, line) => sum + line.lineTotal, 0);
+      const discount = parseFloat(document.getElementById('discount').value) || 0;
+      const paid = parseFloat(document.getElementById('paid').value) || 0;
+      
+      const netTotal = grandTotal - discount;
+      const change = paid - netTotal;
+      
+      document.getElementById('netTotalDisplay').textContent = netTotal.toLocaleString() + ' د.ع';
+      document.getElementById('changeDisplay').textContent = change.toLocaleString() + ' د.ع';
+    }
+    
+    // تأكيد البيع
+    function confirmSale() {
+      if (invoiceLines.length === 0) {
+        alert('الفاتورة فارغة');
+        return;
+      }
+      
+      const netTotal = invoiceLines.reduce((sum, line) => sum + line.lineTotal, 0) - 
+                     (parseFloat(document.getElementById('discount').value) || 0);
+      const paid = parseFloat(document.getElementById('paid').value) || 0;
+      
+      if (paid < netTotal) {
+        alert('المبلغ المدفوع غير كافي');
+        return;
+      }
+      
+      const batch = db.batch();
+      
+      // تحديث كميات المنتجات
+      invoiceLines.forEach(line => {
+        const product = products.find(p => p.id === line.productId);
+        const newQty = product.quantity - line.qty;
+        const productRef = db.collection('products').doc(product.id);
+        batch.update(productRef, { quantity: newQty });
+      });
+      
+      // حفظ الفاتورة
+      const invoice = {
+        id: Date.now().toString(),
+        date: new Date().toLocaleString('ar-IQ'),
+        lines: [...invoiceLines],
+        total: netTotal,
+        paid: paid,
+        change: paid - netTotal,
+        discount: parseFloat(document.getElementById('discount').value) || 0,
+        createdAt: new Date().toISOString()
+      };
+      
+      batch.set(db.collection('invoices').doc(invoice.id), invoice);
+      
+      batch.commit()
+        .then(() => {
+          alert('تم حفظ الفاتورة بنجاح');
+          clearInvoice();
+          printInvoice(invoice);
+        })
+        .catch(error => {
+          console.error('Error confirming sale: ', error);
+          alert('حدث خطأ أثناء حفظ الفاتورة');
+        });
+    }
+    
+    // طباعة الفاتورة
+    function printInvoice(invoice) {
+  const printWindow = window.open('', '_blank');
+
+  const itemsHtml = invoice.lines.map(line => `
+  <tr>
+    <td>${line.productName}</td>
+    <td>${line.price.toLocaleString()} د.ع</td>
+    <td>${line.qty}</td>
+    <td>${line.lineTotal.toLocaleString()} د.ع</td>
+  </tr>
+`).join('');
+
+  printWindow.document.write(`
+    <html dir="rtl" lang="ar">
+      <head>
+        <title>فاتورة</title>
+        <style>
+          body { font-family: Arial, sans-serif; padding: 20px; }
+          table { width: 100%; border-collapse: collapse; }
+          th, td { border: 1px solid black; padding: 6px; text-align: center; }
+        </style>
+      </head>
+      <body>
+        <h2>العميدي للإلكترونيات</h2>
+        <p>التاريخ: ${invoice.date}</p>
+        <table>
+          <thead>
+            <tr><th>المنتج</th><th>السعر</th><th>الكمية</th><th>المجموع</th></tr>
+          </thead>
+          <tbody>
+            ${itemsHtml}
+          </tbody>
+        </table>
+        <p>الخصم: ${invoice.discount.toLocaleString()} د.ع</p>
+        <p>الإجمالي: ${invoice.total.toLocaleString()} د.ع</p>
+        <p>المدفوع: ${invoice.paid.toLocaleString()} د.ع</p>
+        <p>المتبقي: ${invoice.change.toLocaleString()} د.ع</p>
+      </body>
+    </html>
+  `);
+
+  printWindow.document.close();
+
+  printWindow.onload = function() {
+    printWindow.focus();
+    printWindow.print();
+    printWindow.close();
+  };
+}
+
+
+    // مسح الباركود
+    function handleBarcodeSale(barcode) {
+      if (!barcode || barcode.length < 3) return;
+      
+      const product = products.find(p => p.barcode === barcode);
+      if (!product) {
+        alert('المنتج غير موجود');
+        return;
+      }
+      
+      document.getElementById('saleProductSelect').value = product.id;
+      updateProductPrice();
+      document.getElementById('saleQty').focus();
+    }
+    
+    function startBarcodeScanner() {
+      const scannerDiv = document.getElementById('barcodeScanner');
+      scannerDiv.style.display = 'block';
+      
+      Quagga.init({
+        inputStream: {
+          name: "Live",
+          type: "LiveStream",
+          target: document.querySelector('#scannerContainer'),
+          constraints: {
+            width: 480,
+            height: 320,
+            facingMode: "environment",
+         
+        },
+    },
+        decoder: {
+          readers: ["ean_reader", "ean_8_reader", "code_128_reader", "code_39_reader"]
+        },
+      }, function(err) {
+        if (err) {
+          console.error(err);
+          alert('حدث خطأ في تشغيل الماسح الضوئي');
+          return;
+        }
+        
+        isScanning = true;
+        Quagga.start();
+      });
+      
+      Quagga.onDetected(function(result) {
+        if (!isScanning) return;
+        
+        const code = result.codeResult.code;
+        document.getElementById('saleBarcode').value = code;
+        handleBarcodeSale(code);
+        stopBarcodeScanner();
+      });
+    }
+
+    function stopBarcodeScanner() {
+      if (isScanning) {
+        Quagga.stop();
+        isScanning = false;
+      }
+      document.getElementById('barcodeScanner').style.display = 'none';
+    }
+    
+    // إلغاء الفاتورة
+    function clearInvoice() {
+      if (invoiceLines.length > 0 && !confirm('هل أنت متأكد من إلغاء الفاتورة؟')) {
+        return;
+      }
+      
+      invoiceLines = [];
+      renderInvoice();
+      document.getElementById('discount').value = 0;
+      document.getElementById('paid').value = '';
+      calcFinal();
+    }
+  </script>
+</body>
+</html>
